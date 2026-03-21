@@ -25,9 +25,11 @@ From serious prediction to entertaining simulation, we make every "what if" visi
 ## 📸 Screenshots
 
 <div align="center">
-<img src="./miroshark-nobg.png" alt="MiroShark UI" width="80%"/>
+<img src="./screen1.png" alt="MiroShark Screenshot 1" width="80%"/>
 <br/><br/>
-<img src="./screen3.png" alt="MiroShark Simulation" width="80%"/>
+<img src="./screen2.png" alt="MiroShark Screenshot 2" width="80%"/>
+<br/><br/>
+<img src="./screen3.png" alt="MiroShark Screenshot 3" width="80%"/>
 </div>
 
 ## 🔄 Workflow
