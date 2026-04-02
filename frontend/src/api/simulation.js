@@ -217,3 +217,12 @@ export const getSimulationHistory = (limit = 20) => {
   return service.get('/api/simulation/history', { params: { limit } })
 }
 
+/**
+ * Get agent influence leaderboard for a completed simulation
+ * @param {string} simulationId
+ * @returns {Promise<{agents: Array, total_agents: number}>}
+ */
+export const getInfluenceLeaderboard = (simulationId) => {
+  return service.get(`/api/simulation/${simulationId}/influence`)
+}
+

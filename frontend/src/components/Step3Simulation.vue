@@ -39,6 +39,17 @@
         ▶ Replay
       </button>
 
+      <!-- Influence Leaderboard toggle -->
+      <button
+        v-if="allActions.length > 0"
+        class="action-btn secondary"
+        :class="{ active: showInfluence }"
+        @click="showInfluence = !showInfluence"
+        title="Agent influence leaderboard"
+      >
+        ◈ Influence
+      </button>
+
       <!-- Resume (when paused/stopped/failed with partial data) -->
       <button
         v-if="phase === 2 && hasPartialData"
@@ -125,8 +136,16 @@
       </div>
     </div>
 
+    <!-- Influence Leaderboard (overlay when toggled) -->
+    <InfluenceLeaderboard
+      v-if="showInfluence"
+      :simulationId="simulationId"
+      :visible="showInfluence"
+      class="influence-overlay"
+    />
+
     <!-- Main Content: Dual Timeline -->
-    <div class="main-content-area" ref="scrollContainer" @scroll="onTimelineScroll">
+    <div v-show="!showInfluence" class="main-content-area" ref="scrollContainer" @scroll="onTimelineScroll">
       <!-- Scroll to bottom button -->
       <button
         v-if="showScrollBtn"
@@ -399,6 +418,7 @@ import {
   getRunStatusDetail
 } from '../api/simulation'
 import { generateReport } from '../api/report'
+import InfluenceLeaderboard from './InfluenceLeaderboard.vue'
 
 const props = defineProps({
   simulationId: String,
@@ -431,6 +451,7 @@ const copied = ref(false)
 const monitorCollapsed = ref(false)
 const filteredAgent = ref(null)
 const filteredPlatform = ref(null)
+const showInfluence = ref(false)
 
 const filterByAgent = (agentName) => {
   filteredAgent.value = filteredAgent.value === agentName ? null : agentName
@@ -1399,6 +1420,21 @@ onUnmounted(() => {
   overflow-y: auto;
   position: relative;
   background: #FAFAFA;
+}
+
+/* --- Influence Leaderboard overlay --- */
+.influence-overlay {
+  flex: 1;
+  overflow: hidden;
+  background: var(--background);
+  border-top: 1px solid rgba(10,10,10,0.06);
+}
+
+/* Highlight the active influence toggle button */
+.action-btn.active {
+  background: var(--color-orange);
+  color: var(--color-white);
+  border-color: var(--color-orange);
 }
 
 .agent-info.clickable {

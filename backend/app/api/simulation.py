@@ -2041,6 +2041,148 @@ def get_agent_stats(simulation_id: str):
         }), 500
 
 
+# ============== Influence Leaderboard ==============
+
+@simulation_bp.route('/<simulation_id>/influence', methods=['GET'])
+def get_influence_leaderboard(simulation_id: str):
+    """
+    Compute agent influence scores from simulation action JSONL logs.
+
+    Reads twitter/actions.jsonl, reddit/actions.jsonl, and polymarket/actions.jsonl,
+    then ranks agents by a composite influence score:
+
+        score = engagement_received * 3 + follows_received * 2
+                + platform_count * 5 + posts_created
+
+    Where:
+        engagement_received — likes, reposts, quotes, and comment-likes on the agent's posts
+        follows_received    — number of other agents that followed this agent
+        platform_count      — number of distinct platforms where the agent appeared (max 3)
+        posts_created       — number of original posts created by the agent
+
+    Returns the top 20 agents sorted by score descending.
+    """
+    try:
+        sim_dir = os.path.join(Config.WONDERWALL_SIMULATION_DATA_DIR, simulation_id)
+
+        if not os.path.exists(sim_dir):
+            return jsonify({"success": False, "error": f"Simulation not found: {simulation_id}"}), 404
+
+        # Engagement action types that credit the original post author
+        ENGAGEMENT_TYPES = frozenset({
+            'LIKE_POST', 'REPOST', 'QUOTE_POST', 'LIKE_COMMENT',
+            'CREATE_COMMENT',  # replying to a post counts as engagement
+        })
+
+        agents = {}  # agent_name -> mutable stats dict
+
+        def _get_or_create(name):
+            if name not in agents:
+                agents[name] = {
+                    'agent_name': name,
+                    'posts_created': 0,
+                    'engagement_received': 0,
+                    'follows_received': 0,
+                    'platforms': set(),
+                }
+            return agents[name]
+
+        for platform in ('twitter', 'reddit', 'polymarket'):
+            actions_path = os.path.join(sim_dir, platform, 'actions.jsonl')
+            if not os.path.exists(actions_path):
+                continue
+
+            with open(actions_path, 'r', encoding='utf-8') as fh:
+                for raw_line in fh:
+                    raw_line = raw_line.strip()
+                    if not raw_line:
+                        continue
+                    try:
+                        event = json.loads(raw_line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    # Skip bookkeeping events that have no agent
+                    if event.get('event_type') in (
+                        'simulation_start', 'round_start', 'round_end', 'simulation_end'
+                    ):
+                        continue
+
+                    agent_name = event.get('agent_name')
+                    if not agent_name:
+                        continue
+
+                    actor = _get_or_create(agent_name)
+                    actor['platforms'].add(platform)
+
+                    action_type = event.get('action_type', '')
+                    args = event.get('action_args') or {}
+
+                    if action_type == 'CREATE_POST':
+                        actor['posts_created'] += 1
+
+                    elif action_type in ENGAGEMENT_TYPES:
+                        # Credit the original author, not the actor
+                        author = (
+                            args.get('post_author_name')
+                            or args.get('original_author_name')
+                        )
+                        if author and author != agent_name:
+                            _get_or_create(author)['engagement_received'] += 1
+
+                    elif action_type == 'FOLLOW':
+                        target = args.get('target_user_name')
+                        if target:
+                            _get_or_create(target)['follows_received'] += 1
+
+        if not agents:
+            return jsonify({
+                "success": True,
+                "data": {"agents": [], "total_agents": 0}
+            })
+
+        ranked = []
+        for a in agents.values():
+            platform_count = len(a['platforms'])
+            score = (
+                a['engagement_received'] * 3
+                + a['follows_received'] * 2
+                + platform_count * 5
+                + a['posts_created']
+            )
+            ranked.append({
+                'agent_name': a['agent_name'],
+                'posts_created': a['posts_created'],
+                'engagement_received': a['engagement_received'],
+                'follows_received': a['follows_received'],
+                'platform_count': platform_count,
+                'platforms': sorted(a['platforms']),
+                'influence_score': score,
+            })
+
+        ranked.sort(key=lambda x: x['influence_score'], reverse=True)
+
+        # Attach rank (1-based)
+        for i, entry in enumerate(ranked):
+            entry['rank'] = i + 1
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "agents": ranked[:20],
+                "total_agents": len(ranked),
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Failed to compute influence leaderboard: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
 # ============== Database Query Endpoints ==============
 
 @simulation_bp.route('/<simulation_id>/posts', methods=['GET'])
