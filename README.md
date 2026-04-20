@@ -512,6 +512,10 @@ By default, only response previews (200 chars) are logged. Set `MIROSHARK_LOG_PR
 Support the project : 0xd7bc6a05a56655fb2052f742b012d1dfd66e1ba3
 AGPL-3.0. See [LICENSE](./LICENSE).
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=aaronjmars/miroshark&type=Date)](https://www.star-history.com/#aaronjmars/miroshark&Date)
+
 ## Credits
 
 Built on [MiroFish](https://github.com/666ghj/MiroFish) by [666ghj](https://github.com/666ghj) (Shanda Group). Neo4j + Ollama storage layer adapted from [MiroFish-Offline](https://github.com/nikmcfly/MiroFish-Offline) by [nikmcfly](https://github.com/nikmcfly). Simulation engine powered by [OASIS](https://github.com/camel-ai/oasis) (CAMEL-AI).
