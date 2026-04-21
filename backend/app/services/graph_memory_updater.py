@@ -1,15 +1,12 @@
 """Graph memory update service that processes agent activities and updates Neo4j."""
 
-import os
 import time
 import threading
-import json
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
 from queue import Queue, Empty
 
-from ..config import Config
 from ..utils.logger import get_logger
 from ..storage import GraphStorage
 
